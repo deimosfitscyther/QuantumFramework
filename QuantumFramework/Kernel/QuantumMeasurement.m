@@ -126,7 +126,7 @@ QuantumMeasurementProp[qm_, "MixedStates"] := With[{rep = If[qm["PureStateQ"], 1
         MatchQ[qm["LabelHead"], "Computational" | Automatic],
         QuantumState[QuantumState[ArrayReshape[#, Table[qm["StateDimension"], rep]], QuantumBasis[qm["StateDimensions"]]], qm["StateBasis"]]["Computational"] & /@
             qm["StateDual"]["StateMatrix"],
-        MatchQ[qm["LabelHead"], "Eigen"],
+        MatchQ[qm["LabelHead"], "Eigen" | "Eigen"[_]],
         QuantumState[ArrayReshape[#, Table[qm["StateDimension"], rep]], qm["StateBasis"]] & /@
             qm["StateDual"]["StateMatrix"],
         True,
@@ -156,7 +156,7 @@ QuantumMeasurementProp[qm_, "Projectors"] := qm["Eigenstate"]["Projectors"]
 QuantumMeasurementProp[qm_, "Outcomes", args___] := Which[
     MatchQ[qm["LabelHead"], "Computational" | Automatic],
     qm["Computational"],
-    MatchQ[qm["LabelHead"], "Eigen"],
+    MatchQ[qm["LabelHead"], "Eigen" | "Eigen"[_]],
     qm["ReverseEigenQudits"],
     True,
     qm["Canonical"]
@@ -217,7 +217,7 @@ QuantumMeasurementProp[qm_, "SimulatedMeasurement", n_Integer] := RandomVariate[
 
 QuantumMeasurementProp[qm_, "SimulatedCounts", n_Integer : 100] := RandomVariate[MultinomialDistribution[n, qm["ProbabilitiesList"]]]
 
-QuantumMeasurementProp[qm_, "Mean"] := Replace[Total @ MapThread[Times, {qm["ProbabilitiesList"], qm["EigenvalueVectors"]}], {x_} :> x]
+QuantumMeasurementProp[qm_, "Mean"] := Replace[Total @ MapThread[Times, {QuantumMeasurement[qm, "Label" -> "Eigen"]["ProbabilitiesList"], qm["EigenvalueVectors"]}], {x_} :> x]
 
 QuantumMeasurementProp[qm_, "StateAssociation" | "StatesAssociation"] := Part[
     KeySort @ AssociationThread[qm["Outcomes"], qm["States"]],
