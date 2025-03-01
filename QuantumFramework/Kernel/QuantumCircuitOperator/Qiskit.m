@@ -184,7 +184,7 @@ import matplotlib
 matplotlib.use('Agg')
 fig = pickle.loads(<* $pythonBytes *>).draw(output='mpl', style='iqp', scale=<* scale *>)
 fig.canvas.draw()
-image = PIL.Image.frombytes('RGB', fig.canvas.get_width_height(), fig.canvas.tostring_rgb())
+image = PIL.Image.frombytes('RGBA', fig.canvas.get_width_height(), fig.canvas.buffer_rgba())
 matplotlib.pyplot.close()
 image
 "];
@@ -596,7 +596,7 @@ import matplotlib
 
 fig = plot_circuit_layout(qc, backend)
 fig.canvas.draw()
-image = PIL.Image.frombytes('RGB', fig.canvas.get_width_height(), fig.canvas.tostring_rgb())
+image = PIL.Image.frombytes('RGBA', fig.canvas.get_width_height(), fig.canvas.buffer_rgba())
 matplotlib.pyplot.close()
 image
 "];
