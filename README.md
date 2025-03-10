@@ -5,4 +5,11 @@ Install and use the development version:
 PacletInstall["https://www.wolfr.am/DevWQCF", ForceVersionInstall -> True]
 << Wolfram`QuantumFramework`
 ```
+
+Load the local installation:
+```
+PacletDirectoryLoad["path_to_the_paclet_source/QuantumFramework"]
+<< Wolfram`QuantumFramework`
+```
+
 To contact [Wolfram quantum team](https://www.wolfram.com/quantum-computation-framework/), please contact us at quantum [at] wolfram [dot] com.
