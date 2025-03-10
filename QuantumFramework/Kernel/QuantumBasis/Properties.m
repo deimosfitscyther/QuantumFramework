@@ -292,6 +292,10 @@ QuantumBasisProp[qb_, "Bend"] := QuantumTensorProduct[qb, qb["Conjugate"]]
 
 QuantumBasisProp[qb_, "BendDual"] := QuantumTensorProduct[qb, qb["Conjugate"]["Dual"]]
 
+QuantumBasisProp[qb_, "Double"] := With[{out = qb["OutputQudits"], in = qb["InputQudits"]},
+    qb["Bend"]["PermuteOutput", FindPermutation @ Riffle[Range[out], Range[out + 1, 2 out]]]["PermuteInput", FindPermutation @ Riffle[Range[in], Range[in + 1, 2 in]]]
+]
+
 QuantumBasisProp[qb_, "Diagram", opts : OptionsPattern[QuantumDiagramGraphics]] := QuantumDiagramGraphics[
     qb,
     opts,

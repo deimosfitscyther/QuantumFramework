@@ -87,7 +87,9 @@ QuantumEvolve[
 
             state = state["Split", state["Qudits"]];
             If[ hamiltonian["MatrixQ"],
-                state = QuantumState[state["Double"], hamiltonian["QuditBasis"]],
+                state = QuantumState[state["Double"], hamiltonian["QuditBasis"]];
+                basis = basis["Double"]
+                ,
                 state = QuantumState[state, hamiltonian["Input"]["Dual"]]
             ]
         ]
