@@ -648,17 +648,17 @@ QuantumOperator[{"RandomUnitary", qb_ ? QuantumBasisQ}, order : (_ ? autoOrderQ)
     ]
 
 QuantumOperator[{"RandomUnitary", args___}, order : (_ ? autoOrderQ) : {1}, opts___] := Enclose @
-    QuantumOperator[{"RandomUnitary", ConfirmBy[QuantumBasis[args], QuantumBasisQ]}, order, opts]
+    With[{basis = ConfirmBy[QuantumBasis[args], QuantumBasisQ]}, QuantumOperator[{"RandomUnitary", basis}, Join[order, Max[order] + Range[basis["Qudits"] - Length[order]]], opts]]
 
 
 QuantumOperator["RandomHermitian", order : (_ ? orderQ) : {1}, opts___] := Enclose @
     QuantumOperator[{"RandomHermitian", ConfirmBy[QuantumBasis[2, Length[order]], QuantumBasisQ]}, order, opts]
 
 QuantumOperator[{"RandomHermitian", qb_ ? QuantumBasisQ}, order : (_ ? orderQ) : {1}, opts___] :=
-    With[{u = QuantumOperator["RandomUnitary"[qb], order, opts]}, u + SuperDagger[u]]
+    Enclose @ With[{u = ConfirmBy[QuantumOperator["RandomUnitary"[qb], order, opts], #["InputDimensions"] == #["OutputDimensions"] &]}, u + SuperDagger[u]]
 
-QuantumOperator[{"RandomHermitian", args___}, order : (_ ? orderQ) : {1}] := Enclose @
-    QuantumOperator[{"RandomHermitian", ConfirmBy[QuantumBasis[args], QuantumBasisQ]}, order]
+QuantumOperator[{"RandomHermitian", args___}, order : (_ ? orderQ) : {1}, opts___] := Enclose @
+    With[{basis = ConfirmBy[QuantumBasis[args], QuantumBasisQ]}, QuantumOperator[{"RandomHermitian", basis}, Join[order, Max[order] + Range[basis["Qudits"] - Length[order]]], opts]]
 
 
 QuantumOperator["Permutation", opts___] := QuantumOperator[{"Permutation", 2, Cycles[{{1, 2}}]}, opts]

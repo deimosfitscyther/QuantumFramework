@@ -37,8 +37,7 @@ QuantumEvolve[
         state = Replace[defaultState, Automatic :> QuantumState[{"Register", hamiltonian["InputDimensions"]}]];
         phaseSpaceQ = state["Picture"] === "PhaseSpace" && state["VectorQ"] && AllTrue[Sqrt[state["Dimensions"]], IntegerQ]
     ];
-    ConfirmAssert[hamiltonian["OutputDimensions"] == hamiltonian["InputDimensions"]];
-    ConfirmAssert[AllTrue[lindblad, #["OutputDimensions"] == #["InputDimensions"] &]];
+    ConfirmAssert[AllTrue[Prepend[lindblad, hamiltonian] , #["OutputDimensions"] == #["InputDimensions"] &]];
     ConfirmAssert[state === None || phaseSpaceQ || hamiltonian["InputDimension"] == state["Dimension"]];
     If[ defaultParameter === Automatic,
         parameter = First[Join[hamiltonian["Parameters"], Catenate[Through[lindblad["Parameters"]]]], \[FormalT]];
@@ -53,9 +52,12 @@ QuantumEvolve[
     matrix = Progress`EvaluateWithProgress[
         (* TrigToExp helps with some examples *)
         TrigToExp @ Confirm @ If[mergeQ, MergeInterpolatingFunctions, Identity][
-            If[ (phaseSpaceQ || state === None && lindblad =!= {}) && ! hamiltonian["MatrixQ"],
-                HamiltonianTransitionRate[hamiltonian, basis],
-                QuantumOperator[If[phaseSpaceQ, hamiltonian["Double"], hamiltonian], basis]["Matrix"] / I
+            If[ (phaseSpaceQ || state === None) && ! hamiltonian["MatrixQ"],
+                HamiltonianTransitionRate[hamiltonian, If[phaseSpaceQ, basis, basis["Double"]]],
+                If[ hamiltonian["MatrixQ"] || phaseSpaceQ,
+                    QuantumOperator[hamiltonian["Double"], If[state =!= None && phaseSpaceQ, basis, basis["Double"]]],
+                    QuantumOperator[hamiltonian, basis]
+                ]["Matrix"] / I
             ]
         ],
         <|"Text" -> "Preparing Hamiltonian"|>
@@ -63,7 +65,7 @@ QuantumEvolve[
     jumps = Progress`EvaluateWithProgress[
         TrigToExp @ Confirm @ If[mergeQ, Map[MergeInterpolatingFunctions], Identity][
             If[ (phaseSpaceQ || state === None) && lindblad =!= {} && ! First[lindblad]["MatrixQ"],
-                PadRight[gammas, Length[lindblad], 1] * LindbladTransitionRates[lindblad, basis],
+                PadRight[gammas, Length[lindblad], 1] * LindbladTransitionRates[lindblad, If[phaseSpaceQ, basis, basis["Double"]]],
                 PadRight[Sqrt[gammas], Length[lindblad], 1] * (QuantumOperator[#, basis]["Matrix"] & /@ lindblad)
             ]
         ],
@@ -80,18 +82,13 @@ QuantumEvolve[
         matrix . s,
         matrix . s - s . matrix + Total[With[{L = #, Ldg = ConjugateTranspose[#]}, L . s . Ldg - 1 / 2 (Ldg . L . s + s . Ldg . L)] & /@ jumps]
     ]];
-    If[ state =!= None,
-        If[ phaseSpaceQ,
-            (* always treat state as a single system in phase-space *)
-            state = QuantumPhaseSpaceTransform[QuantumState[QuantumWeylTransform[state], Sqrt[state["Dimension"]]], basis],
-
-            state = state["Split", state["Qudits"]];
-            If[ hamiltonian["MatrixQ"],
-                state = QuantumState[state["Double"], hamiltonian["QuditBasis"]];
-                basis = basis["Double"]
-                ,
-                state = QuantumState[state, hamiltonian["Input"]["Dual"]]
-            ]
+    If[ state =!= None && ! phaseSpaceQ,
+        state = state["Split", state["Qudits"]];
+        If[ hamiltonian["MatrixQ"],
+            basis = basis["Double"];
+            state = QuantumState[state["Double"], basis]
+            ,
+            state = QuantumState[state, hamiltonian["Input"]["Dual"]]
         ]
     ];
     init = If[defaultState === None, IdentityMatrix[Length[matrix], SparseArray], state["State"]];
@@ -175,15 +172,9 @@ QuantumEvolve[
     Which[
         state === None && SquareMatrixQ[solution],
         QuantumOperator[
-            QuantumState[
-                If[ Dimensions[solution] == hamiltonian["MatrixNameDimensions"] ^ 2,
-                    ArrayReshape[
-                        Transpose[ArrayReshape[solution, Join[#, #] & @ hamiltonian["MatrixNameDimensions"]], 2 <-> 3],
-                        hamiltonian["MatrixNameDimensions"] ^ 2
-                    ],
-                    Flatten @ solution
-                ],
-                hamiltonian["Basis"]
+            If[ Dimensions[solution] == hamiltonian["MatrixNameDimensions"] ^ 2,
+                QuantumState[Flatten @ solution, hamiltonian["Basis"]["Double"]]["Undouble"],
+                QuantumState[Flatten @ solution, hamiltonian["Basis"]]
             ],
             hamiltonian["Order"],
             "ParameterSpec" -> DeleteDuplicatesBy[Append[hamiltonian["ParameterSpec"], parameterSpec], First]
